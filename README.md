@@ -1,71 +1,74 @@
-# Steps to run the codebase 
+# BankApp
 
-$ npm install
-$ npm start
+This is a React component called `BankApp` that represents a decentralized banking application. It allows users to interact with a deployed smart contract on the Ethereum blockchain. The component provides various functionalities such as connecting a wallet, creating an account, checking if an account exists, depositing funds, and withdrawing funds.
 
-navigate browser to localhost:3000
+## Prerequisites
 
------------------------------
-## Tech Stack
+To use this application, you need to have the MetaMask browser extension installed. MetaMask provides a wallet interface for interacting with the Ethereum blockchain.
 
-React Js
-Solidity
+## Installation
 
-## Available Scripts
+Before running this code, make sure you have the following dependencies installed:
 
-In the project directory, you can run:
+- React
+- ethers.js
 
-### `npm start`
+You can install these dependencies by running the following command:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+```bash
+npm install react ethers
+```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Usage
 
-### `npm run build`
+To use the `BankApp` component, follow these steps:
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+1. Import the component into your React application:
 
-# Structure of files in the codebase
+   ```jsx
+   import BankApp from './BankApp';
+   ```
 
-src Folder -
-    Contracts - 
-        BankApp.sol - You can view the smartcontract used in this code 
-        bank_app_abi.json - The abi file of the smartcontract.
+2. Include the `BankApp` component in your JSX code:
 
-The smart contract is deployed on Test BSC Network.
+   ```jsx
+   function App() {
+     return (
+       <div>
+         {/* Other components */}
+         <BankApp />
+       </div>
+     );
+   }
+   ```
 
-### Contract Address - 0x59eFE99aA926a79edEA31F7ED3b2661b1F9e2F62
+3. Start your React application and the `BankApp` component will be rendered.
 
-## Flow of smart contract
+## Functionality
 
-1.Firstly connect your wallet by clicking on connectwallet button(Make sure you have test BNB in your wallet).
-2.You need to create the account by clicking on createAccount  button
-3.You can check whether your account is listed in the network by clicking on checkAccountExists Button
-4.Next you can deposit the balance into your account by entering the number in the textbox.
-5.You can check the balance in the bank account using Account Balance button.
-6.You can transfer your funds in the bank account to another bank account(Make sure that account is also listed in the network)
-7.You can withdraw funds using Withdraw button.
+The `BankApp` component provides the following functionality:
 
+- Connect Wallet: Allows the user to connect their MetaMask wallet to the application.
+- Deposit: Allows the user to deposit funds into their bank account by providing an amount and calling the `deposit` function on the deployed smart contract.
+- Withdraw: Allows the user to withdraw funds from their bank account by providing an amount and calling the `withdraw` function on the deployed smart contract.
 
+## Dependencies
 
-## In App.js you can find all these functions
+The `BankApp` component requires the following dependencies:
 
-connectWalletHandler - For connecting the metamask wallet
-AccoutChangedHandler - Chainging account from metamask can cause this function to work
-chainChangedHandler - Chainging the chain network in the metamask can cause this function to work
-updateEthers - This function helps in communicating with the abi,deployed smart contract and the provider network of the metamask
+- React: A JavaScript library for building user interfaces.
+- ethers: A library for interacting with the Ethereum blockchain.
 
-### `let tempProvider = new ethers.providers.Web3Provider(window.ethereum);`
-###	`let tempSigner = tempProvider.getSigner();`
-### `let tempContract = new ethers.Contract(contractAddress, simple_token_abi, tempSigner)` - These are the steps for integrating Smartcontract with the Frontend.
+## Contract Address
 
-createAccount - Creates the Account in the Bank Dapp
-checkAccountExists - Checks if the Account is listed in the Dapp
-AccountBalance - Checks the balance of the account in the Bank
-DepositBalance - For depositing the balance from your metamask wallet account to bank account
-WithdrawBalance - For Withdrawing the balance from your bank account to metamask wallet address 
-TransferHandler -For transferring the funds between accounts in the bank. Make sure both the banks are listed in the network.
+The `contractAddress` variable in the code represents the address of the deployed smart contract. You need to replace it with the actual address of your deployed contract for the application to function correctly.
 
+## Styling
+
+The component uses CSS modules for styling. The styles are defined in the `Bank.module.css` file and imported into the component.
+
+## Error Handling
+
+If any errors occur during the execution of the smart contract functions or the wallet connection process, error messages will be displayed in the application.
+
+Note: This README assumes basic knowledge of React, Ethereum, and smart contracts.
