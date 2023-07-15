@@ -1,168 +1,175 @@
-import {React, useState, useEffect} from 'react'
-import {ethers} from 'ethers'
-import styles from './Bank.module.css'
-import simple_token_abi from './Contracts/bank_app_abi.json'
+import React, { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
+import styles from './Bank.module.css';
+import simple_token_abi from './Contracts/bank_app_abi.json';
 import Interactions from './Interactions';
 
 const BankApp = () => {
+  let contractAddress = '0x59eFE99aA926a79edEA31F7ED3b2661b1F9e2F62';
 
-	// deploy simple token contract and paste deployed contract address here. This value is local ganache chain
-	let contractAddress = '0x59eFE99aA926a79edEA31F7ED3b2661b1F9e2F62';
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [defaultAccount, setDefaultAccount] = useState(null);
+  const [connButtonText, setConnButtonText] = useState('Connect Wallet');
+  const [provider, setProvider] = useState(null);
+  const [signer, setSigner] = useState(null);
+  const [contract, setContract] = useState(null);
+  const [checkAcc, setCheckAcc] = useState('false');
+  const [accStatus, setAccStatus] = useState('');
 
-	const [errorMessage, setErrorMessage] = useState(null);
-	const [defaultAccount, setDefaultAccount] = useState(null);
-	const [connButtonText, setConnButtonText] = useState('Connect Wallet');
+  const connectWalletHandler = () => {
+    if (window.ethereum && window.ethereum.isMetaMask) {
+      window.ethereum
+        .request({ method: 'eth_requestAccounts' })
+        .then((result) => {
+          accountChangedHandler(result[0]);
+          setConnButtonText('Wallet Connected');
+        })
+        .catch((error) => {
+          setErrorMessage(error.message);
+        });
+    } else {
+      console.log('Need to install MetaMask');
+      setErrorMessage('Please install MetaMask browser extension to interact');
+    }
+  };
 
-	const [provider, setProvider] = useState(null);
-	const [signer, setSigner] = useState(null);
-	const [contract, setContract] = useState(null);
+  const accountChangedHandler = (newAccount) => {
+    setDefaultAccount(newAccount);
+    updateEthers();
+  };
 
-	const [transferHash, setTransferHash] = useState(null);
-	const [checkAcc, setCheckAcc] = useState("false");
-	const [accStatus, setAccStatus]= useState("");
-	const [accbalance, setAccBalance]= useState("");
+  const chainChangedHandler = () => {
+    window.location.reload();
+  };
 
-	const connectWalletHandler = () => {
-		if (window.ethereum && window.ethereum.isMetaMask) {
+  window.ethereum.on('accountsChanged', accountChangedHandler);
+  window.ethereum.on('chainChanged', chainChangedHandler);
 
-			window.ethereum.request({ method: 'eth_requestAccounts'})
-			.then(result => {
-				accountChangedHandler(result[0]);
-				setConnButtonText('Wallet Connected');
-			})
-			.catch(error => {
-				setErrorMessage(error.message);
-			
-			});
+  const updateEthers = () => {
+    let tempProvider = new ethers.providers.Web3Provider(window.ethereum);
+    setProvider(tempProvider);
 
-		} else {
-			console.log('Need to install MetaMask');
-			setErrorMessage('Please install MetaMask browser extension to interact');
-		}
-	}
+    let tempSigner = tempProvider.getSigner();
+    setSigner(tempSigner);
 
-	// update account, will cause component re-render
-	const accountChangedHandler = (newAccount) => {
-		setDefaultAccount(newAccount);
-		updateEthers();
-	}
-	const chainChangedHandler = () => {
-		// reload the page to avoid any errors with chain change mid use of application
-		window.location.reload();
-	}
+    let tempContract = new ethers.Contract(contractAddress, simple_token_abi, tempSigner);
+    setContract(tempContract);
+  };
 
-	// listen for account changes
-	window.ethereum.on('accountsChanged', accountChangedHandler);
+  const createAccount = async () => {
+    try {
+      const tx = await contract.createAcc();
+      await tx.wait();
+      setAccStatus('Your Account is created');
+    } catch (error) {
+      setErrorMessage(error.message);
+    }
+  };
 
-	window.ethereum.on('chainChanged', chainChangedHandler);
+  const checkAccountExists = async () => {
+    try {
+      const exists = await contract.accountExists();
+      setCheckAcc(exists ? 'true' : 'false');
+    } catch (error) {
+      setErrorMessage(error.message);
+    }
+  };
 
-	const updateEthers = () => {
-		let tempProvider = new ethers.providers.Web3Provider(window.ethereum);
-		setProvider(tempProvider);
+  const DepositBalance = async (e) => {
+    e.preventDefault();
+    let depositAmount = e.target.depositAmount.value;
+    try {
+      const tx = await contract.deposit({
+        value: ethers.utils.parseEther(depositAmount),
+      });
+      await tx.wait();
+    } catch (error) {
+      setErrorMessage(error.message);
+    }
+  };
 
-		let tempSigner = tempProvider.getSigner();
-		setSigner(tempSigner);
+  const WithdrawBalance = async (e) => {
+    e.preventDefault();
+    let withdrawAmount = e.target.withdrawAmount.value;
+    try {
+      const tx = await contract.withdraw(withdrawAmount);
+      await tx.wait();
+    } catch (error) {
+      setErrorMessage(error.message);
+    }
+  };
 
-		let tempContract = new ethers.Contract(contractAddress, simple_token_abi, tempSigner);
-		setContract(tempContract);	
-	}
+  useEffect(() => {
+    if (window.ethereum && window.ethereum.isConnected()) {
+      connectWalletHandler();
+    }
+  }, []);
 
-	const createAccount = async()=>{
-		let txt = await contract.createAcc();
-		console.log(txt);
-		setAccStatus("Your Account is created");
-	}
-	const checkAccountExists = async()=>{
-		///e.preventDefault();
-		let txt = await contract.accountExists();
-		if(txt==true){
-		setCheckAcc("true");
-		}
-	}
-	const AccountBalance = async()=>{
-		let txt= await contract.accountBalance();
-		let balanceNumber = txt.toNumber();
-		//let tokenDecimals = await contract.decimals();
-		console.log(balanceNumber)
-		setAccBalance(''+balanceNumber);
-	}
-	const DepositBalance = async(e)=>{
-		e.preventDefault();
-		let depositAmount = e.target.depositAmount.value;
-		let txt= await contract.deposit({
-			value: depositAmount 
-		});
-	}
-	const transferHandler = async (e) => {
-		e.preventDefault();
-		let transferAmount = e.target.sendAmount.value;
-		let recieverAddress = e.target.recieverAddress.value;
-		let txt = await contract.transferEther(recieverAddress, transferAmount);
-		setTransferHash("Transfer confirmation hash: " + txt.hash);
-	}
-	const WithdrawBalance = async(e)=>{
-		e.preventDefault();
-		let withdrawAmount = e.target.withdrawAmount.value;
-		let txt= await contract.withdraw(withdrawAmount);
-		console.log(txt);
-	}
+  return (
+    <div className={styles.container}>
+      <h2 className={styles.title}>Bank Dapp</h2>
+      <button className={styles.walletButton} onClick={connectWalletHandler}>
+        {connButtonText}
+      </button>
 
+      <div className={styles.card}>
+        <div className={styles.addressContainer}>
+          <h3>Address</h3>
+          <p>{defaultAccount}</p>
+        </div>
+      </div>
 
-	return (
-	<div >
-		<h2> Bank Dapp- Create Account,Check Account,Check Balance,Transfer and Deposit </h2>
-		<button className={styles.button6} onClick={connectWalletHandler}>{connButtonText}</button>
+      <div className={styles.interactionsContainer}>
+        <div className={styles.interactionsCard}>
+          <h3 className={styles.cardTitle}>Account Actions</h3>
+          <button onClick={createAccount} className={styles.interactionsButton}>
+            Create Account
+          </button>
+          <button onClick={checkAccountExists} className={styles.interactionsButton}>
+            Check Account Exists
+          </button>
+          <h4 className={styles.statusTitle}>Account Status</h4>
+          <p className={styles.status}>{checkAcc}</p>
+        </div>
 
-		<div className={styles.walletCard}>
-		<div>
-			<h3>Address: {defaultAccount}</h3>
-		</div>
+        <div className={styles.interactionsCard}>
+          <h3 className={styles.cardTitle}>Deposit</h3>
+          <form onSubmit={DepositBalance}>
+            <input
+              type="number"
+              id="depositAmount"
+              min="0"
+              step="1"
+              placeholder="Enter amount"
+              className={styles.inputField}
+            />
+            <button type="submit" className={styles.interactionsButton}>
+              Deposit
+            </button>
+          </form>
+        </div>
 
-		<div>
-			<button onClick={AccountBalance}>Account Balance</button> <h3>Balance in the Bank: {accbalance} </h3>
-		</div>
+        <div className={styles.interactionsCard}>
+          <h3 className={styles.cardTitle}>Withdraw</h3>
+          <form onSubmit={WithdrawBalance}>
+            <input
+              type="number"
+              id="withdrawAmount"
+              min="0"
+              step="1"
+              placeholder="Enter amount"
+              className={styles.inputField}
+            />
+            <button type="submit" className={styles.interactionsButton}>
+              Withdraw
+            </button>
+          </form>
+        </div>
+      </div>
 
-			{errorMessage}
-		</div>
-		<div className={styles.interactionsCard}>
-		<div>
-		<h4>Click here to Create your account. Make sure you are connected to Wallet</h4>
-			<button onClick={createAccount}>CreateAccount</button>
-			<h4>Click here to check if your account Exists or not</h4>
-			<button onClick={checkAccountExists}>CheckAccountExists</button>
-			<h4>Your Account Status</h4> <h5> {checkAcc}</h5>
-		</div>
-				<form onSubmit={transferHandler}>
-					<h3> Transfer money </h3>
-						<p> Reciever Address </p>
-						<input type='text' id='recieverAddress' className={styles.addressInput}/>
-
-						<p> Transfer Amount </p>
-						<input type='number' id='sendAmount' min='0' step='1'/>
-
-						<button type='submit' className={styles.button6}>Transfer</button>
-						<div>
-							{transferHash}
-						</div>
-			</form>
-			<form onSubmit={DepositBalance}>
-					<h3> Deposit Money </h3>
-						<p> Deposit Amount </p>
-						<input type='number' id='depositAmount' min='0' step='1'/>
-						<button type='submit' className={styles.button6}>Deposit</button>
-
-			</form>
-			<form onSubmit={WithdrawBalance}>
-					<h3> Withdraw Money </h3>
-						<p>Withdraw Amount </p>
-						<input type='number' id='withdrawAmount' min='0' step='1'/>
-						<button type='submit' className={styles.button6}>Withdraw</button>
-
-			</form>
-		</div>
-
-	</div>
-	)
-}
+      {errorMessage && <p className={styles.errorMessage}>{errorMessage}</p>}
+    </div>
+  );
+};
 
 export default BankApp;
